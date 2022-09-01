@@ -52,7 +52,7 @@ describe('PricableAsset mock tests', async () => {
     });
 
     it('should return cached price for operations in one block', async () => {
-        const initialPrice = 0;
+        const initialPrice = await pricableAssetContract.cachedAssetPrice();
 
         // Fix a block
         ethers.provider.send('evm_setAutomine', [false]);
