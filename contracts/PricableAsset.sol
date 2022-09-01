@@ -10,6 +10,8 @@ contract PricableAsset is Ownable {
 
     IAssetPriceOracle public priceOracle;
 
+    event CachedAssetPrice(uint256 blockNumber, uint256 cachedAssetPrice);
+
     constructor(address priceOracle_) {
         changePriceOracle(priceOracle_);
     }
@@ -29,6 +31,7 @@ contract PricableAsset is Ownable {
             uint256 currentAssetPrice = assetPrice();
             if (_cachedAssetPrice < currentAssetPrice) {
                 _cachedAssetPrice = assetPrice();
+                emit CachedAssetPrice(_cachedBlock, _cachedAssetPrice);
             }
         }
         return _cachedAssetPrice;
