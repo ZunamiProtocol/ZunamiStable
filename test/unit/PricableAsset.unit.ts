@@ -29,7 +29,7 @@ describe('PricableAsset mock tests', async () => {
         pricableAssetContract = await pricableAssetFactory.deploy(mockAssetPriceOracle.address);
     });
 
-    it('should set price and get it', async () => {
+    it('should get asset price', async () => {
         await mockAssetPriceOracle.mock.lpPrice.returns(utils.parseEther('555'));
         expect(await pricableAssetContract.assetPrice()).to.eq(utils.parseEther('555'));
     });
@@ -52,12 +52,11 @@ describe('PricableAsset mock tests', async () => {
     });
 
     it('should return cached price for operations in one block', async () => {
-        const initialPrice = await pricableAssetContract.cachedAssetPrice();
-
         // Fix a block
         ethers.provider.send('evm_setAutomine', [false]);
         ethers.provider.send('evm_setIntervalMining', [0]);
         const initialBlockNumber = await provider.getBlockNumber();
+        const initialPrice = await pricableAssetContract.cachedAssetPrice();
 
         // Change price
         const cachedPrice = utils.parseEther('555');

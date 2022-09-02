@@ -10,7 +10,7 @@ contract PricableAsset is Ownable {
 
     IAssetPriceOracle public priceOracle;
 
-    event CachedAssetPrice(uint256 blockNumber, uint256 cachedAssetPrice);
+    event CachedAssetPrice(uint256 blockNumber, uint256 assetPrice);
 
     constructor(address priceOracle_) {
         changePriceOracle(priceOracle_);
@@ -22,18 +22,23 @@ contract PricableAsset is Ownable {
     }
 
     function assetPrice() public view returns (uint256) {
-        return _cachedBlock != 0 ? _cachedAssetPrice : priceOracle.lpPrice();
+        return
+            _cachedBlock > 0 && _cachedAssetPrice > 0 ? _cachedAssetPrice : priceOracle.lpPrice();
     }
 
     function assetPriceCached() public returns (uint256) {
-        if (block.number != _cachedBlock) {
-            _cachedBlock = block.number;
-            uint256 currentAssetPrice = assetPrice();
-            if (_cachedAssetPrice < currentAssetPrice) {
-                _cachedAssetPrice = assetPrice();
-                emit CachedAssetPrice(_cachedBlock, _cachedAssetPrice);
-            }
+        if (block.number == _cachedBlock) {
+            return _cachedAssetPrice;
         }
+
+        _cachedBlock = block.number;
+        uint256 currentAssetPrice = assetPrice();
+
+        if (_cachedAssetPrice < currentAssetPrice) {
+            _cachedAssetPrice = currentAssetPrice;
+            emit CachedAssetPrice(_cachedBlock, _cachedAssetPrice);
+        }
+
         return _cachedAssetPrice;
     }
 }
