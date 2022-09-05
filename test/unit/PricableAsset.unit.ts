@@ -57,6 +57,7 @@ describe('PricableAsset mock tests', async () => {
         expect(await pricableAssetContract.cachedAssetPrice()).to.eq(cachedPrice);
     });
 
+    // In this case block numbers are different, _c_cachedBlock = 0 but block.number > 0
     it('should return initial zero price for operations in one block', async () => {
         // Fix a block
         ethers.provider.send('evm_setAutomine', [false]);
@@ -77,6 +78,7 @@ describe('PricableAsset mock tests', async () => {
         ethers.provider.send('evm_setAutomine', [true]);
     });
 
+    // In this case block numbers are different
     it('should return cached price for operations in one block', async () => {
         const initPrice = utils.parseEther('555');
         await mockAssetPriceOracle.mock.lpPrice.returns(initPrice);
@@ -98,5 +100,32 @@ describe('PricableAsset mock tests', async () => {
         // Should be same block and cached price
         expect(currentBlockNumber).to.eq(initialBlockNumber);
         expect(await pricableAssetContract.cachedAssetPrice()).to.eq(currentPrice);
+
+        ethers.provider.send('evm_setAutomine', [true]);
+    });
+
+    // In this case block numbers are equals
+    it('should return cached price when block numbers are equals', async () => {
+        // Fix a block
+        ethers.provider.send('evm_setAutomine', [false]);
+        ethers.provider.send('evm_setIntervalMining', [0]);
+        const initPrice = utils.parseEther('555');
+        await mockAssetPriceOracle.mock.lpPrice.returns(initPrice);
+        await pricableAssetContract.assetPriceCachedInternal();
+        const initialBlockNumber = await provider.getBlockNumber();
+        const currentPrice = await pricableAssetContract.cachedAssetPrice();
+
+        // Change price
+        const newPrice = utils.parseEther('444');
+        await mockAssetPriceOracle.mock.lpPrice.returns(newPrice);
+        await pricableAssetContract.assetPriceCachedInternal();
+
+        const currentBlockNumber = await provider.getBlockNumber();
+
+        // Should be same block and cached price
+        expect(currentBlockNumber).to.eq(initialBlockNumber);
+        expect(await pricableAssetContract.cachedAssetPrice()).to.eq(currentPrice);
+
+        ethers.provider.send('evm_setAutomine', [true]);
     });
 });
