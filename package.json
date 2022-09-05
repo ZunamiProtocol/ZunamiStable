@@ -9,7 +9,7 @@
     "contract:size": "hardhat size-contracts;",
     "fork": "hardhat node",
     "test": "hardhat test",
-    "test:coverage": "hardhat coverage  --testfiles 'test/*.ts'",
+    "test:coverage": "hardhat coverage  --testfiles 'test/unit/*.ts'",
     "test:verbose": "hardhat test --verbose test/*.ts",
     "deploy:mainnet": "hardhat run --network mainnet ./scripts/deploy.js",
     "deploy:rinkeby": "hardhat run --network rinkeby --gasprice 1000000000 ./scripts/deploy.js",

@@ -8,7 +8,7 @@ contract PricableAssetMock is PricableAsset {
 
     constructor(address priceOracle_) PricableAsset(priceOracle_) {}
 
-    function assetPriceCachedMock() external {
+    function assetPriceCachedInternal() external {
         cachedAssetPrice = assetPriceCached();
     }
 }

@@ -27,16 +27,13 @@ contract PricableAsset is Ownable {
     }
 
     function assetPriceCached() public returns (uint256) {
-        if (block.number == _cachedBlock) {
-            return _cachedAssetPrice;
-        }
-
-        _cachedBlock = block.number;
-        uint256 currentAssetPrice = assetPrice();
-
-        if (_cachedAssetPrice < currentAssetPrice) {
-            _cachedAssetPrice = currentAssetPrice;
-            emit CachedAssetPrice(_cachedBlock, _cachedAssetPrice);
+        if (block.number != _cachedBlock) {
+            _cachedBlock = block.number;
+            uint256 currentAssetPrice = assetPrice();
+            if (_cachedAssetPrice < currentAssetPrice) {
+                _cachedAssetPrice = assetPrice();
+                emit CachedAssetPrice(_cachedBlock, _cachedAssetPrice);
+            }
         }
 
         return _cachedAssetPrice;
