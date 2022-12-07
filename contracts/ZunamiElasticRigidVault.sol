@@ -2,9 +2,12 @@
 pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/access/AccessControl.sol';
-import './ElasticVault.sol';
+import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import './ElasticRigidVault.sol';
+import "./RigidAddressSet.sol";
+import "./interfaces/IRedistributor.sol";
 
-abstract contract ZunamiElasticVault is ElasticVault, AccessControl {
+abstract contract ZunamiElasticRigidVault is AccessControl, ElasticRigidVault, RigidAddressSet {
     using Math for uint256;
 
     bytes32 public constant REBALANCER_ROLE = keccak256('REBALANCER_ROLE');
@@ -28,6 +31,7 @@ abstract contract ZunamiElasticVault is ElasticVault, AccessControl {
     uint256 public dailyWithdrawCountingBlock; // start block of limit counting
 
     IAssetPriceOracle public priceOracle;
+    IRedistributor public redistributor;
 
     uint256 private _assetPriceCacheDuration = 1200; // cache every 4 hour
     
@@ -36,6 +40,7 @@ abstract contract ZunamiElasticVault is ElasticVault, AccessControl {
     event DailyWithdrawParamsChanged(uint256 dailyWithdrawDuration, uint256 dailyWithdrawLimit);
     event WithdrawFeeChanged(uint256 withdrawFee);
     event FeeDistributorChanged(address feeDistributor);
+    event RedistributorChanged(address redistributor);
 
     constructor(address priceOracle_) {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -146,5 +151,44 @@ abstract contract ZunamiElasticVault is ElasticVault, AccessControl {
         if (nominalFee > 0) {
             SafeERC20.safeTransfer(IERC20Metadata(asset()), feeDistributor, nominalFee);
         }
+    }
+
+    function containRigidAddress(address _rigidAddress) public view override returns(bool) {
+        return _containRigidAddress(_rigidAddress);
+    }
+
+    function addRigidAddress(address _rigidAddress) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(!containRigidAddress(_rigidAddress), "Not elastic address");
+        uint256 balanceElastic = balanceOf(_rigidAddress);
+        _addRigidAddress(_rigidAddress);
+        if(balanceElastic > 0) {
+            _convertElasticToRigidBalancePartially(_rigidAddress, balanceElastic);
+        }
+    }
+
+    function removeRigidAddress(address _rigidAddress) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(containRigidAddress(_rigidAddress), "Not rigid address");
+        uint256 balanceRigid = balanceOf(_rigidAddress);
+        _removeRigidAddress(_rigidAddress);
+        if(balanceRigid > 0) {
+            _convertRigidToElasticBalancePartially(_rigidAddress, balanceRigid);
+        }
+    }
+
+    function setRedistributor(address _redistributor) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_redistributor != address(0),"Zero redistributor address");
+        redistributor = IRedistributor(_redistributor);
+        emit RedistributorChanged(_redistributor);
+    }
+
+    function redistribute() public {
+        uint256 totalRigidNominal = _convertToNominalWithCaching(totalSupplyRigid(), Math.Rounding.Up);
+
+        require(lockedNominalRigid() >= totalRigidNominal, "Wrong redistribution total nominal balance");
+
+        uint256 nominal = lockedNominalRigid() - totalRigidNominal;
+
+        SafeERC20.safeApprove(IERC20Metadata(asset()), address(redistributor), nominal);
+        redistributor.requestRedistribution(nominal);
     }
 }

@@ -18,7 +18,7 @@ contract ElasticERC20Mock is ElasticERC20, PricableAssetMock {
         cacheAssetPrice();
 
         if (initialAccount != address(0)) {
-            _mint(initialAccount, initialNominalBalance, initialBalance);
+            _mintElastic(initialAccount, initialNominalBalance, initialBalance);
         }
     }
 
@@ -27,7 +27,7 @@ contract ElasticERC20Mock is ElasticERC20, PricableAssetMock {
         uint256 nominalAmount,
         uint256 amount
     ) public {
-        _mint(account, nominalAmount, amount);
+        _mintElastic(account, nominalAmount, amount);
     }
 
     function burn(
@@ -35,7 +35,7 @@ contract ElasticERC20Mock is ElasticERC20, PricableAssetMock {
         uint256 nominalAmount,
         uint256 amount
     ) public {
-        _burn(account, nominalAmount, amount);
+        _burnElastic(account, nominalAmount, amount);
     }
 
     function transferInternal(
@@ -44,7 +44,7 @@ contract ElasticERC20Mock is ElasticERC20, PricableAssetMock {
         uint256 nominalAmount,
         uint256 value
     ) public {
-        _transfer(from, to, nominalAmount, value);
+        _transferElastic(from, to, nominalAmount, value);
     }
 
     function approveInternal(
@@ -52,6 +52,6 @@ contract ElasticERC20Mock is ElasticERC20, PricableAssetMock {
         address spender,
         uint256 value
     ) public {
-        _approve(owner, spender, value);
+        _approveElastic(owner, spender, value);
     }
 }

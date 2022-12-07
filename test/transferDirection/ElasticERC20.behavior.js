@@ -254,7 +254,7 @@ function shouldBehaveLikeElasticERC20Transfer(
         });
 
         describe('when the sender transfers all balance', function () {
-            const amount = mulNorm(balance, assetPrice.toString());
+            const amount = mulNorm(balance, assetPrice);
 
             it('transfers the requested amount', async function () {
                 await transfer.call(this, from, to, amount);

@@ -4,18 +4,17 @@ const { ZERO_ADDRESS } = constants;
 
 const {
     shouldBehaveLikeElasticERC20,
-    shouldBehaveLikeElasticERC20Transfer,
     shouldBehaveLikeElasticERC20Approve,
-} = require('./transferDirection/ElasticERC20.behavior');
+} = require('./ElasticERC20.behavior');
 
-const ElasticERC20Mock = artifacts.require('ElasticERC20Mock');
+const ElasticERC20RigidExtensionMock = artifacts.require('ElasticERC20RigidExtensionMock');
 const AssetPriceOracleMock = artifacts.require('AssetPriceOracleMock');
 
 const one = new BN(10).pow(new BN(18));
 const mulNorm = (amount, price) => new BN(amount).mul(new BN(price)).div(one);
 const divNorm = (amount, price) => new BN(amount).mul(one).div(new BN(price));
 
-contract('ElasticERC20', function (accounts) {
+contract('ElasticToRigidERC20', function (accounts) {
     const [initialHolder, recipient, anotherAccount] = accounts;
 
     const name = 'My Token';
@@ -30,7 +29,7 @@ contract('ElasticERC20', function (accounts) {
     beforeEach(async function () {
         this.assetPricer = await AssetPriceOracleMock.new();
         await this.assetPricer.setAssetPriceInternal(initialPrice);
-        this.token = await ElasticERC20Mock.new(
+        this.token = await ElasticERC20RigidExtensionMock.new(
             name,
             symbol,
             this.assetPricer.address,
@@ -40,18 +39,9 @@ contract('ElasticERC20', function (accounts) {
         );
         await this.assetPricer.setAssetPriceInternal(updatedPrice);
         await this.token.cacheAssetPrice();
-    });
 
-    it('has a name', async function () {
-        expect(await this.token.name()).to.equal(name);
-    });
-
-    it('has a symbol', async function () {
-        expect(await this.token.symbol()).to.equal(symbol);
-    });
-
-    it('has 18 decimals', async function () {
-        expect(await this.token.decimals()).to.be.bignumber.equal('18');
+        await this.token.addRigidAddress(recipient);
+        await this.token.addRigidAddress(anotherAccount);
     });
 
     shouldBehaveLikeElasticERC20(
@@ -262,11 +252,15 @@ contract('ElasticERC20', function (accounts) {
 
         describe('for a non zero account', function () {
             beforeEach('minting', async function () {
+                this.token.removeRigidAddress(recipient);
+
                 this.receipt = await this.token.mint(
                     recipient,
                     amount,
                     mulNorm(amount, updatedPrice)
                 );
+
+                this.token.addRigidAddress(recipient);
             });
 
             it('increments totalSupply', async function () {
@@ -358,33 +352,6 @@ contract('ElasticERC20', function (accounts) {
                 'for less amount than balance',
                 mulNorm(initialSupply, updatedPrice).subn(1)
             );
-        });
-    });
-
-    describe('_transfer', function () {
-        shouldBehaveLikeElasticERC20Transfer(
-            'ERC20',
-            initialHolder,
-            recipient,
-            initialSupply,
-            updatedPrice,
-            function (from, to, amount) {
-                return this.token.transferInternal(from, to, divNorm(amount, updatedPrice), amount);
-            }
-        );
-
-        describe('when the sender is the zero address', function () {
-            it('reverts', async function () {
-                await expectRevert(
-                    this.token.transferInternal(
-                        ZERO_ADDRESS,
-                        recipient,
-                        initialSupply,
-                        mulNorm(initialSupply, updatedPrice)
-                    ),
-                    'ERC20: transfer from the zero address'
-                );
-            });
         });
     });
 

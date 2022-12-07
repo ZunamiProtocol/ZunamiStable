@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '../ZunamiElasticVault.sol';
+import '../ZunamiElasticRigidVault.sol';
 
-contract ZunamiElasticVaultMock is ZunamiElasticVault {
+contract ZunamiElasticRigidVaultMock is ZunamiElasticRigidVault {
     constructor(
         IERC20Metadata asset,
         address priceOracle,
         string memory name,
         string memory symbol
-    ) ElasticERC20(name, symbol) ElasticVault(asset) ZunamiElasticVault(priceOracle) {
+    ) ElasticERC20(name, symbol) ElasticRigidVault(asset) ZunamiElasticRigidVault(priceOracle) {
         cacheAssetPrice();
     }
 
@@ -18,7 +18,7 @@ contract ZunamiElasticVaultMock is ZunamiElasticVault {
         uint256 nominalAmount,
         uint256 amount
     ) public {
-        _mint(account, nominalAmount, amount);
+        _mintElastic(account, nominalAmount, amount);
     }
 
     function mockBurn(
@@ -26,6 +26,6 @@ contract ZunamiElasticVaultMock is ZunamiElasticVault {
         uint256 nominalAmount,
         uint256 amount
     ) public {
-        _burn(account, nominalAmount, amount);
+        _burnElastic(account, nominalAmount, amount);
     }
 }

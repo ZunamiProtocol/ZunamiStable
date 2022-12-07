@@ -4,13 +4,13 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/utils/math/Math.sol';
-import './ElasticERC20.sol';
 import './interfaces/IElasticVault.sol';
+import "./ElasticERC20RigidExtension.sol";
 
 /**
  * @dev OpenZeppelin v4.7.0 ERC4626 fork
  */
-abstract contract ElasticVault is ElasticERC20, IElasticVault {
+abstract contract ElasticRigidVault is ElasticERC20RigidExtension, IElasticVault {
     using Math for uint256;
 
     IERC20Metadata private immutable _asset;
@@ -125,7 +125,7 @@ abstract contract ElasticVault is ElasticERC20, IElasticVault {
         // value are transfered and before the nominal are minted, which is a valid state.
         // slither-disable-next-line reentrancy-no-eth
         SafeERC20.safeTransferFrom(IERC20Metadata(asset()), caller, address(this), nominal);
-        _mint(receiver, nominal, value);
+        _mintElastic(receiver, nominal, value);
 
         emit Deposit(caller, receiver, value, nominal);
     }
@@ -160,7 +160,7 @@ abstract contract ElasticVault is ElasticERC20, IElasticVault {
         _beforeWithdraw(caller, receiver, owner, value, nominal);
 
         if (caller != owner) {
-            _spendAllowance(owner, caller, value);
+            _spendAllowanceRigid(owner, caller, value);
         }
 
         uint256 nominalFee = _calcFee(caller, nominal);
@@ -172,7 +172,7 @@ abstract contract ElasticVault is ElasticERC20, IElasticVault {
         //
         // Conclusion: we need to do the transfer after the burn so that any reentrancy would happen after the
         // nominal are burned and after the value are transfered, which is a valid state.
-        _burn(owner, nominal, value);
+        _burnElastic(owner, nominal, value);
         SafeERC20.safeTransfer(IERC20Metadata(asset()), receiver, nominal - nominalFee);
 
         emit Withdraw(caller, receiver, owner, value, nominal, nominalFee);

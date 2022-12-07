@@ -2,14 +2,14 @@ const { BN, constants, expectRevert, snapshot, time } = require('@openzeppelin/t
 const { expect } = require('chai');
 
 const ERC20DecimalsMock = artifacts.require('ERC20DecimalsMock');
-const ZunamiElasticVaultMock = artifacts.require('ZunamiElasticVaultMock');
+const ZunamiElasticRigidVaultMock = artifacts.require('ZunamiElasticRigidVaultMock');
 const AssetPriceOracleMock = artifacts.require('AssetPriceOracleMock');
 
 const one = new BN(10).pow(new BN(18));
 const parseToken = (token) => new BN(token).mul(one);
 const parseShare = (share) => new BN(share).mul(one);
 
-contract('ZunamiElasticVault', function (accounts) {
+contract('ZunamiElasticRigidVault', function (accounts) {
     const [holder, recipient, spender, other, user1, user2] = accounts;
 
     const name = 'My Token';
@@ -25,7 +25,7 @@ contract('ZunamiElasticVault', function (accounts) {
         this.assetPricer = await AssetPriceOracleMock.new();
         await this.assetPricer.setAssetPriceInternal(initialPrice);
         this.token = await ERC20DecimalsMock.new(name, symbol, 18);
-        this.vault = await ZunamiElasticVaultMock.new(
+        this.vault = await ZunamiElasticRigidVaultMock.new(
             this.token.address,
             this.assetPricer.address,
             name + ' Vault',

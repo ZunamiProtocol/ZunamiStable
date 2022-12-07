@@ -6,16 +6,16 @@ const {
     shouldBehaveLikeElasticERC20,
     shouldBehaveLikeElasticERC20Transfer,
     shouldBehaveLikeElasticERC20Approve,
-} = require('./transferDirection/ElasticERC20.behavior');
+} = require('./ElasticERC20.behavior');
 
-const ElasticERC20Mock = artifacts.require('ElasticERC20Mock');
+const ElasticERC20RigidExtensionMock = artifacts.require('ElasticERC20RigidExtensionMock');
 const AssetPriceOracleMock = artifacts.require('AssetPriceOracleMock');
 
 const one = new BN(10).pow(new BN(18));
 const mulNorm = (amount, price) => new BN(amount).mul(new BN(price)).div(one);
 const divNorm = (amount, price) => new BN(amount).mul(one).div(new BN(price));
 
-contract('ElasticERC20', function (accounts) {
+contract('ElasticToElasticERC20', function (accounts) {
     const [initialHolder, recipient, anotherAccount] = accounts;
 
     const name = 'My Token';
@@ -30,7 +30,7 @@ contract('ElasticERC20', function (accounts) {
     beforeEach(async function () {
         this.assetPricer = await AssetPriceOracleMock.new();
         await this.assetPricer.setAssetPriceInternal(initialPrice);
-        this.token = await ElasticERC20Mock.new(
+        this.token = await ElasticERC20RigidExtensionMock.new(
             name,
             symbol,
             this.assetPricer.address,
@@ -40,18 +40,6 @@ contract('ElasticERC20', function (accounts) {
         );
         await this.assetPricer.setAssetPriceInternal(updatedPrice);
         await this.token.cacheAssetPrice();
-    });
-
-    it('has a name', async function () {
-        expect(await this.token.name()).to.equal(name);
-    });
-
-    it('has a symbol', async function () {
-        expect(await this.token.symbol()).to.equal(symbol);
-    });
-
-    it('has 18 decimals', async function () {
-        expect(await this.token.decimals()).to.be.bignumber.equal('18');
     });
 
     shouldBehaveLikeElasticERC20(
@@ -369,14 +357,14 @@ contract('ElasticERC20', function (accounts) {
             initialSupply,
             updatedPrice,
             function (from, to, amount) {
-                return this.token.transferInternal(from, to, divNorm(amount, updatedPrice), amount);
+                return this.token.transferElasticInternal(from, to, divNorm(amount, updatedPrice), amount);
             }
         );
 
         describe('when the sender is the zero address', function () {
             it('reverts', async function () {
                 await expectRevert(
-                    this.token.transferInternal(
+                    this.token.transferElasticInternal(
                         ZERO_ADDRESS,
                         recipient,
                         initialSupply,
