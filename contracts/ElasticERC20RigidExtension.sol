@@ -214,4 +214,8 @@ abstract contract ElasticERC20RigidExtension is ElasticERC20 {
         if (!containRigidAddress(account)) return super._burnElastic(account, nominal, value);
         revert("RigidElasticERC20: can't be burned");
     }
+
+    function _decreaseLockedNominalRigidBy(uint256 nominal) internal {
+        _lockedNominal -= nominal;
+    }
 }

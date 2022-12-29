@@ -333,7 +333,16 @@ contract('ZunamiElasticRigidVault', function (accounts) {
             await redistributor.mock.requestRedistribution
                 .withArgs(nominalRedistributionByTwo.toString())
                 .returns();
+
+            expect(
+                await this.vault.lockedNominalRigid()
+            ).to.be.bignumber.equal(initialNominal);
+
             await this.vault.redistribute();
+
+            expect(
+                await this.vault.lockedNominalRigid()
+            ).to.be.bignumber.equal(initialNominal.sub(nominalRedistributionByTwo));
 
             expect(
                 await this.token.allowance(this.vault.address, redistributor.address)
@@ -342,13 +351,18 @@ contract('ZunamiElasticRigidVault', function (accounts) {
             newPrice = new BN('3000000000000000000'); // 3 * 10^18
             await this.assetPricer.setAssetPriceInternal(newPrice);
             await this.vault.cacheAssetPrice();
-            const nominalRedistributionByThree = initialNominal.sub(
+            const nominalRedistributionByThree = initialNominal.sub(nominalRedistributionByTwo).sub(
                 initialValue.div(newPrice).mul(one)
             );
             await redistributor.mock.requestRedistribution
                 .withArgs(nominalRedistributionByThree.toString())
                 .returns();
+
             await this.vault.redistribute();
+
+            expect(
+                await this.vault.lockedNominalRigid()
+            ).to.be.bignumber.equal(initialNominal.sub(nominalRedistributionByTwo.add(nominalRedistributionByThree)));
 
             expect(
                 await this.token.allowance(this.vault.address, redistributor.address)

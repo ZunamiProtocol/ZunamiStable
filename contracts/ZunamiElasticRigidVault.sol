@@ -30,7 +30,7 @@ abstract contract ZunamiElasticRigidVault is AccessControl, ElasticRigidVault, R
     uint256 public dailyWithdrawTotal;
     uint256 public dailyWithdrawCountingBlock; // start block of limit counting
 
-    IAssetPriceOracle public priceOracle;
+    IAssetPriceOracle public immutable priceOracle;
     IRedistributor public redistributor;
 
     uint256 private _assetPriceCacheDuration = 1200; // cache every 4 hour
@@ -201,6 +201,8 @@ abstract contract ZunamiElasticRigidVault is AccessControl, ElasticRigidVault, R
         );
 
         uint256 nominal = lockedNominalRigid() - totalRigidNominal;
+
+        _decreaseLockedNominalRigidBy(nominal);
 
         SafeERC20.safeIncreaseAllowance(IERC20Metadata(asset()), address(redistributor), nominal);
         redistributor.requestRedistribution(nominal);

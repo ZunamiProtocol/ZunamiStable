@@ -15,7 +15,7 @@ contract ZunamiRedistributor is IRedistributor, Context, ReentrancyGuard {
     uint8 public constant DEFAULT_DECIMALS = 18;
     uint256 public constant DEFAULT_DECIMALS_FACTOR = uint256(10)**DEFAULT_DECIMALS;
 
-    IZunami public zunami;
+    IZunami public immutable zunami;
 
     event Redistributed(address pool, uint256 value);
 
