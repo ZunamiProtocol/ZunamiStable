@@ -1,0 +1,3 @@
+npx hardhat verify --network mainnet --contract contracts/zETH.sol:zETH 0xe47f1CD2A37c6FE69e3501AE45ECA263c5A87b2b
+
+npx hardhat verify --network mainnet 0x60278E383F1299198f70C6DEa453ac6CEcDBeb8a 0x9dE83985047ab3582668320A784F6b9736c6EEa7

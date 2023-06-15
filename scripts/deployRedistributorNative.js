@@ -5,7 +5,7 @@ async function main() {
     const redistributor = await ZunamiRedistributor.deploy(zunamiAddress);
 
     await redistributor.deployed();
-    console.log(`ZunamiRedistributor deployed to:`, redistributor.address);
+    console.log(`ZunamiRedistributorNative deployed to:`, redistributor.address);
 }
 
 main()
