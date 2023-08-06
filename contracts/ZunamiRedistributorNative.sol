@@ -9,11 +9,15 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import './interfaces/IRedistributor.sol';
 import './interfaces/IZunamiNative.sol';
 
+//import "hardhat/console.sol";
+
 contract ZunamiRedistributorNative is IRedistributor, Context, ReentrancyGuard {
     using Math for uint256;
 
     uint8 public constant DEFAULT_DECIMALS = 18;
     uint256 public constant DEFAULT_DECIMALS_FACTOR = uint256(10)**DEFAULT_DECIMALS;
+
+    address public constant ETH_MOCK_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
     IZunamiNative public immutable zunami;
 
@@ -22,6 +26,10 @@ contract ZunamiRedistributorNative is IRedistributor, Context, ReentrancyGuard {
     constructor(address _zunami) {
         require(_zunami != address(0), 'Zero zunami');
         zunami = IZunamiNative(_zunami);
+    }
+
+    receive() external payable {
+        // receive ETH after unwrap
     }
 
     function requestRedistribution(uint256 nominal) external nonReentrant() {
@@ -44,7 +52,7 @@ contract ZunamiRedistributorNative is IRedistributor, Context, ReentrancyGuard {
                     info.lpShares.mulDiv(DEFAULT_DECIMALS_FACTOR, zunamiTotalSupply)
                 );
                 _transferBalances(address(info.strategy), poolBalances);
-                uint256 deposited = info.strategy.deposit(poolBalances);
+                uint256 deposited = info.strategy.deposit{value: poolBalances[0]}(poolBalances);
                 emit Redistributed(address(info.strategy), deposited);
             }
         }
@@ -53,18 +61,18 @@ contract ZunamiRedistributorNative is IRedistributor, Context, ReentrancyGuard {
     function _transferBalances(address receiver, uint256[5] memory balances) internal {
         for (uint256 i = 0; i < 5; i++) {
             if (balances[i] > 0) {
-                SafeERC20.safeTransfer(IERC20(zunami.tokens(i)), receiver, balances[i]);
+                safeTransferNative(IERC20(zunami.tokens(i)), receiver, balances[i]);
             }
         }
     }
 
     function tokensBalances() public view returns (uint256[5] memory balances) {
         return [
-            IERC20(zunami.tokens(0)).balanceOf(address(this)),
-            IERC20(zunami.tokens(1)).balanceOf(address(this)),
-            IERC20(zunami.tokens(2)).balanceOf(address(this)),
-            IERC20(zunami.tokens(3)).balanceOf(address(this)),
-            IERC20(zunami.tokens(4)).balanceOf(address(this))
+            balanceOfNative(IERC20(zunami.tokens(0))),
+            balanceOfNative(IERC20(zunami.tokens(1))),
+            balanceOfNative(IERC20(zunami.tokens(2))),
+            balanceOfNative(IERC20(zunami.tokens(3))),
+            balanceOfNative(IERC20(zunami.tokens(4)))
         ];
     }
 
@@ -82,5 +90,24 @@ contract ZunamiRedistributorNative is IRedistributor, Context, ReentrancyGuard {
         ];
     }
 
+    function balanceOfNative(IERC20 token_) internal view returns (uint256) {
+        if (address(token_) == address(0)) return 0;
+        if (address(token_) == ETH_MOCK_ADDRESS) {
+            return address(this).balance;
+        } else {
+            return token_.balanceOf(address(this));
+        }
+    }
 
+    function safeTransferNative(
+        IERC20 token,
+        address receiver,
+        uint256 amount
+    ) internal {
+        if (address(token) == ETH_MOCK_ADDRESS) {
+            receiver.call{ value: amount }(''); // don't fail if user contract doesn't accept ETH
+        } else {
+            SafeERC20.safeTransfer(token, receiver,amount);
+        }
+    }
 }
